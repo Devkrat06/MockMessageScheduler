@@ -1,0 +1,51 @@
+version: '3.9'
+
+# ── Local development stack ───────────────────────────────────────────────────
+# Starts PostgreSQL + Redis only. The Node backend runs on your host machine
+# via `npm run dev` so you get hot-reload and easy debugging.
+#
+# Usage:
+#   docker compose up -d        # start DB + Redis
+#   docker compose down         # stop and remove containers
+#   docker compose down -v      # also wipe volumes (fresh DB)
+
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: scheduler_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: scheduler
+      POSTGRES_USER: scheduler
+      POSTGRES_PASSWORD: secret
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U scheduler -d scheduler']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    container_name: scheduler_redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - redisdata:/data
+    # Remove the command line below if you don't want a Redis password locally
+    # command: redis-server --requirepass secret
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
+  redisdata:
